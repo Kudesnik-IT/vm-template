@@ -1,72 +1,73 @@
 #!/bin/bash
 
-# Функция для вывода сообщений с отступом
+# Function to output messages with indentation
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Предупреждение перед началом
-log "\e[31mВНИМАНИЕ\e[0m: Этот скрипт очистит систему и подготовит её к использованию как шаблон."
-log "После выполнения скрипта системе будет нужна дополнительная настройка, чтобы вернуться к нормальному состоянию."
-read -p "Вы уверены, что хотите продолжить? (y/n): " confirm
+# Warning before starting
+log "\e[WARNING\e[0m: This script will clean the system and prepare it for use as a template."
+log "After running the script, the system will need additional configuration to return to normal."
+read -p "Are you sure you want to continue? (y/n): " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    log "Операция отменена пользователем."
+    log "Operation cancelled by user."
     exit 1
 fi
 
-log "Начинаем подготовку системы к шаблону..."
+log "We begin preparing the system for the template..."
 
-# --- Шаг 1: Очистка системы ---
-log "Шаг 1: Очистка временных файлов и журналов..."
+# --- Step 1: Cleaning the system ---
+log "Step 1: Clear temporary files and logs..."
 sudo rm -rf /tmp/* /var/tmp/*
 sudo truncate -s 0 /var/log/*.log /var/log/syslog /var/log/auth.log
 sudo apt clean
 sudo apt autoclean
 sudo apt autoremove --purge -y
-log "Шаг 1 завершен."
+log "Step 1 complete."
 
-# --- Шаг 2: Сброс уникальных идентификаторов ---
-log "Шаг 2: Сброс UUID файловых систем..."
+# --- Step 2: Reset Unique Identifiers ---
+log "Step 2: Reset filesystem UUIDs..."
 for partition in $(lsblk -ln -o NAME | grep -E "^sd"); do
     sudo tune2fs -U random /dev/$partition 2>/dev/null || true
 done
-log "UUID файловых систем сброшены."
+log "Filesystem UUIDs reset."
 
-log "Шаг 2: Сброс MAC-адресов сетевых интерфейсов..."
+# --- Step 3: Resetting MAC addresses of network interfaces ---
+log "Step 3: Resetting MAC addresses of network interfaces..."
 sudo rm -f /etc/udev/rules.d/70-persistent-net.rules
-log "MAC-адреса сброшены."
+log "MAC addresses reset."
 
-# --- Шаг 3: Настройка имени хоста и сети ---
-log "Шаг 3: Сброс имени хоста..."
+# --- Step 4: Setting up hostname and network ---
+log "Step 4: Resetting hostname..."
 sudo hostnamectl set-hostname localhost
 echo "127.0.0.1   localhost" | sudo tee /etc/hosts > /dev/null
 echo "::1         localhost ip6-localhost ip6-loopback" | sudo tee -a /etc/hosts > /dev/null
-log "Имя хоста и файл hosts обновлены."
+log "Hostname and hosts file updated."
 
-# --- Шаг 4: Удаление SSH-ключей ---
-log "Шаг 4: Удаление SSH-ключей..."
+# --- Step 5: Removing SSH keys ---
+log "Step 5: Removing SSH keys..."
 sudo rm -f /etc/ssh/ssh_host_*
-log "SSH-ключи удалены."
+log "SSH keys removed."
 
-# --- Шаг 5: Отключение служб и автозапуска ---
-log "Шаг 5: Отключение служб..."
+# --- Step 6: Disabling services and startup ---
+log "Step 6: Disabling services..."
 sudo systemctl disable --now systemd-resolved 2>/dev/null || true
 sudo systemctl disable --now NetworkManager 2>/dev/null || true
-log "Службы отключены."
+log "Services disabled."
 
-# --- Шаг 6: Очистка истории команд ---
-log "Шаг 6: Очистка истории команд..."
+# --- Step 7: Clearing command history ---
+log "Step 7: Clearing command history..."
 history -c
 sudo history -c
 sudo rm -f ~/.bash_history /root/.bash_history
-log "История команд очищена."
+log "Command history cleared."
 
-# --- Шаг 7: Дефрагментация диска (опционально) ---
-#log "Шаг 7: Дефрагментация диска..."
+# --- Step 8: Defragment disk (optional) ---
+#log "Step 8: Defragment disk..."
 #sudo dd if=/dev/zero of=/zero.fill bs=1M 2>/dev/null || true
 #sudo rm -f /zero.fill
-#log "Дефрагментация завершена."
+#log "Defragmentation completed."
 
-# --- Завершение ---
-log "Подготовка системы к шаблону завершена."
-log "Теперь вы можете выключить систему и преобразовать её в шаблон в Proxmox."
+# --- Completing ---
+log "Preparing the system for the template is complete."
+log "You can now shut down the system and convert it to a template in Proxmox."
