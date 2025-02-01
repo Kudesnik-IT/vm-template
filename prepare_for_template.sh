@@ -6,7 +6,7 @@ log() {
 }
 
 # Warning before starting
-log "\e[WARNING\e[0m: This script will clean the system and prepare it for use as a template."
+log "WARNING: This script will clean the system and prepare it for use as a template."
 log "After running the script, the system will need additional configuration to return to normal."
 read -p "Are you sure you want to continue? (y/n): " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
